@@ -1,13 +1,39 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+
+.sidebar-fixed {
+  position: fixed;
+  top: 64px; /* Assuming AppBar height is 64px, adjust if different */
+  left: 0;
+  height: calc(100vh - 64px); /* Subtract AppBar height */
+  width: 16.6667%;
+  overflow-y: auto;
+}
+.main-content {
+  padding-top: 64px; /* Same as AppBar height */
+}
+.chat-input-section {
+  z-index: 1100; /* Below AppBar but above other content */
+  left: 16.6667%; /* Same as sidebar width */
+}
+.toggle-sidebar-btn {
+  bottom: 64px; /* Assuming chat input height is 64px, adjust if different */
+}
+.custom-textfield .MuiOutlinedInput-notchedOutline{
+  border:none
+}
+.chat-messages {
+  overflow-y: scroll;
+  scrollbar-width: none; /* For Firefox */
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.chat-messages::-webkit-scrollbar {
+  display: none; /* For Chrome, Safari, and Edge */
+}
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
