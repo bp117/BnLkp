@@ -12,6 +12,16 @@ interface MessageProps {
   theme: string;
   botIsTyping?: boolean;
 }
+interface SummaryResponse {
+  duration: string;
+  result: {
+    context: string;
+    book: string;
+    section_title: string;
+    hyperlink: string;
+    generated_resp: string;
+  };
+}
 
 const Message: React.FC<MessageProps> = ({ role, content, theme, botIsTyping = false }) => {
   const [selectedTab, setSelectedTab] = React.useState(0);
@@ -19,10 +29,29 @@ const Message: React.FC<MessageProps> = ({ role, content, theme, botIsTyping = f
   const [selectedButtons, setSelectedButtons] = useState<string[]>([]);
   const [isSummarized, setIsSummarized] = useState(false);
   const [isEnhanced, setIsEnhanced] = useState(false);
+  const [summaryResponse, setSummaryResponse] = useState<SummaryResponse | null>(null);
+  const [selectedTabContext, setSelectedTabContext] = useState<string | null>(null);
 
+
+  const handleSummarize = async (context:any) => {
+      try {
+          const response = await fetch('http://localhost:3001/summarize', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ text: context })
+          });
+          const data = await response.json();
+          setSummaryResponse(data.response);
+      } catch (error) {
+          console.error("Error summarizing:", error);
+      }
+  }
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
+    setSelectedTabContext(content[newValue].context);
   };
 
   const handleAccordionToggle = (event: React.SyntheticEvent, isExpanded: boolean) => {
@@ -39,7 +68,8 @@ const Message: React.FC<MessageProps> = ({ role, content, theme, botIsTyping = f
       } `}>
       <img src={`${role}-icon.png`} alt={`${role} icon`} className="w-8 h-8 mr-2" />
       {role === 'bot' && !botIsTyping && content ? (
-        <Accordion expanded={expanded} onChange={handleAccordionToggle} className='w-4/5'>
+        <div className='w-4/5'>
+        <Accordion expanded={expanded} onChange={handleAccordionToggle} >
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Typography>Bot Responses</Typography>
           </AccordionSummary>
@@ -72,7 +102,10 @@ const Message: React.FC<MessageProps> = ({ role, content, theme, botIsTyping = f
                         <Button
                           variant={isSummarized ? "contained" : "outlined"}
                           color="primary"
-                          onClick={() => setIsSummarized(!isSummarized)}
+                          onClick={() => {
+                            setIsSummarized(!isSummarized);
+                            handleSummarize(selectedTabContext);
+                        }}  
                           style={{ marginRight: '10px' }}
                         >
                           Summarize
@@ -92,6 +125,20 @@ const Message: React.FC<MessageProps> = ({ role, content, theme, botIsTyping = f
             </div>
           </AccordionDetails>
         </Accordion>
+        {summaryResponse && (
+          <Accordion>
+              <AccordionSummary>
+                  Summary
+              </AccordionSummary>
+              <AccordionDetails>
+                  {summaryResponse.result.generated_resp}
+              </AccordionDetails>
+              <div style={{textAlign: 'right', paddingRight: '10px'}}>
+                  {summaryResponse.duration}
+              </div>
+          </Accordion>
+      )}
+      </div>
       ) : botIsTyping ? (
         <div className="flex p-2 rounded text-base w-3/4 ">
           <div className="h-2 w-2 bg-gray-500 rounded-full animate-pulse"></div>

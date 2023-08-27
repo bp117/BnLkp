@@ -35,6 +35,25 @@ app.post('/chat', (req, res) => {
 
     res.json(response);
 });
+app.post('/summarize', (req, res) => {
+    const { text } = req.body;
+    
+    // Here, you'd typically process the text and generate a summary.
+    // For the sake of this example, we'll return a mock response.
+
+    res.json({
+        response: {
+            duration: "677 ms",
+            result: {
+                context: text,
+                book: "Mock Book",
+                section_title: "Mock Section",
+                hyperlink: "http://mocklink/",
+                generated_resp: "This is a mock summarized response."
+            }
+        }
+    });
+});
 
 const PORT = 3001;
 app.listen(PORT, () => {
