@@ -1,74 +1,110 @@
-import React from 'react';
-import { Tabs, Tab, Card, CardHeader, CardContent, Link, Typography } from '@mui/material';
-import { Book, Link as LinkIcon } from '@mui/icons-material';
+import React, {
+  useState
+} from 'react';
+import {Button, Tabs, Tab, Card, CardHeader, CardContent, Link, Typography, Accordion, AccordionSummary, AccordionDetails, Stack, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Book, Link as LinkIcon, ExpandMore } from '@mui/icons-material';
 
 type Role = 'user' | 'bot';
 
 interface MessageProps {
-    role: Role;
-    content: any;
-    theme: string;
-    botIsTyping?: boolean;
+  role: string;
+  content: any;
+  theme: string;
+  botIsTyping?: boolean;
 }
 
 const Message: React.FC<MessageProps> = ({ role, content, theme, botIsTyping = false }) => {
-    const [selectedTab, setSelectedTab] = React.useState(0);
+  const [selectedTab, setSelectedTab] = React.useState(0);
+  const [expanded, setExpanded] = React.useState(false);
+  const [selectedButtons, setSelectedButtons] = useState<string[]>([]);
+  const [isSummarized, setIsSummarized] = useState(false);
+  const [isEnhanced, setIsEnhanced] = useState(false);
 
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-        setSelectedTab(newValue);
-    };
 
-    if (role === 'bot' && !botIsTyping && content) {
-        return (
-            <div className={`message ${role} mb-2 flex flex-col`}>
-                <Tabs value={selectedTab} onChange={handleTabChange}>
-                    {content.map((item: any, index: number) => (
-                        <Tab key={index} label={`Response ${index + 1}`} />
-                    ))}
-                </Tabs>
-                {content.map((item: any, index: number) => (
-                    <div key={index} hidden={selectedTab !== index}>
-                        <Card variant="outlined">
-                            <CardHeader
-                                avatar={<Book />}
-                                title={item.book}
-                                subheader={
-                                    <Link href={item.hyperlink} target="_blank" rel="noopener">
-                                        <LinkIcon /> {item.hyperlink}
-                                    </Link>
-                                }
-                            />
-                            <CardContent>
-                                <Typography variant="body2" color="textSecondary" component="p">
-                                    {item.context}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </div>
-                ))}
-            </div>
-        );
-    }
- 
-    return (
-        <div className={`message ${role} mb-2 flex items-center justify-center h-20 ${role === 'user' 
-        ? ` ${theme === 'dark' ? 'border-b border-gray-900/50 bg-gray-800 text-white' : 'bg-white text-black'}` 
-        : ` ${theme === 'dark' ? 'border-b border-gray-900/50 bg-[#444654] text-white' : 'bg-gray-100 text-black'}`
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setSelectedTab(newValue);
+  };
+
+  const handleAccordionToggle = (event: React.SyntheticEvent, isExpanded: boolean) => {
+    setExpanded(isExpanded);
+  };
+
+  const handleButtonsChange = (event: React.SyntheticEvent, newButtons: string[]) => {
+    setSelectedButtons(newButtons);
+  };
+  return (
+    <div className={`message ${role} mb-2 flex items-center justify-center min-h-20 ${role === 'user'
+      ? ` ${theme === 'dark' ? 'border-b border-gray-900/50 bg-gray-800 text-white' : 'bg-white text-black'}`
+      : ` ${theme === 'dark' ? 'border-b border-gray-900/50 bg-[#444654] text-white' : 'bg-gray-100 text-black'}`
       } `}>
-            <img src={`${role}-icon.png`} alt={`${role} icon`} className="w-8 h-8 mr-2" />
-            {botIsTyping ? (
-                <div className="flex p-2 rounded text-base w-3/4 ">
-                    <div className="h-2 w-2 bg-gray-500 rounded-full animate-pulse"></div>
-                    <div className="h-2 w-2 bg-gray-500 rounded-full animate-pulse delay-150"></div>
-                    <div className="h-2 w-2 bg-gray-500 rounded-full animate-pulse delay-300"></div>
+      <img src={`${role}-icon.png`} alt={`${role} icon`} className="w-8 h-8 mr-2" />
+      {role === 'bot' && !botIsTyping && content ? (
+        <Accordion expanded={expanded} onChange={handleAccordionToggle} className='w-4/5'>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Typography>Bot Responses</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className="flex flex-col w-full">
+              <Tabs value={selectedTab} onChange={handleTabChange}>
+                {content.map((item: any, index: number) => (
+                  <Tab key={index} label={`Response ${index + 1}`} />
+                ))}
+              </Tabs>
+              {content.map((item: any, index: number) => (
+                <div key={index} hidden={selectedTab !== index}>
+                  <Card variant="outlined">
+                    <CardHeader
+                      avatar={<Book />}
+                      title={item.book}
+                      subheader={
+                        <Link href={item.hyperlink} target="_blank" rel="noopener">
+                          <LinkIcon /> {item.hyperlink}
+                        </Link>
+                      }
+                    />
+                    <CardContent>
+                      <Typography variant="body2" color="textSecondary" component="p">
+                        {item.context}
+                      </Typography>
+                    </CardContent>
+                    <Stack spacing={2} direction="row">
+                      <div>
+                        <Button
+                          variant={isSummarized ? "contained" : "outlined"}
+                          color="primary"
+                          onClick={() => setIsSummarized(!isSummarized)}
+                          style={{ marginRight: '10px' }}
+                        >
+                          Summarize
+                        </Button>
+                        <Button
+                          variant={isEnhanced ? "contained" : "outlined"}
+                          color="primary"
+                          onClick={() => setIsEnhanced(!isEnhanced)}
+                        >
+                          Enhance
+                        </Button>
+                      </div>
+                    </Stack>
+                  </Card>
                 </div>
-            ) : (
-                <p className={`p-2 rounded text-base w-3/4 break-words`}>
-                    {content}
-                </p>
-            )}
+              ))}
+            </div>
+          </AccordionDetails>
+        </Accordion>
+      ) : botIsTyping ? (
+        <div className="flex p-2 rounded text-base w-3/4 ">
+          <div className="h-2 w-2 bg-gray-500 rounded-full animate-pulse"></div>
+          <div className="h-2 w-2 bg-gray-500 rounded-full animate-pulse delay-150"></div>
+          <div className="h-2 w-2 bg-gray-500 rounded-full animate-pulse delay-300"></div>
         </div>
-    );
+      ) : (
+        <p className={`p-2 rounded text-base w-3/4 break-words`}>
+          {content}
+        </p>
+      )}
+    </div>
+  );
 };
 
 export default Message;
