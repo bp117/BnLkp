@@ -37,3 +37,23 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Hide the default file input */
+.file-input {
+  display: none;
+}
+
+/* Style the label */
+.upload-label {
+  display: block;
+  padding: 10px 15px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  text-align: center;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.upload-label:hover {
+  background-color: #e5e5e5;
+}

@@ -35,6 +35,23 @@ app.post('/chat', (req, res) => {
 
     res.json(response);
 });
+app.post('/chat', (req, res) => {
+    const { prompt } = req.body;
+
+    // You can add logic here to generate a response based on the query and corpus_name
+
+    const response = {
+        response: {
+            result: 
+                {
+            
+                    generated_resp: "sdfdsfdsfdsds"
+                }
+        }
+    };
+
+    res.json(response);
+});
 app.post('/summarize', (req, res) => {
     const { text } = req.body;
     

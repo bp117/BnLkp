@@ -12,6 +12,14 @@ interface MessageProps {
   content: any;
   theme: string;
   botIsTyping?: boolean;
+  isSummarized:boolean;
+  setIsSummarized: React.Dispatch<React.SetStateAction<boolean>>;
+  isEnhanced:boolean;
+  setIsEnhanced: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedTabContext:string | null;
+   setSelectedTabContext: React.Dispatch<React.SetStateAction<string| null >>; 
+   summaryResponse: SummaryResponse | null ;
+  setSummaryResponse:React.Dispatch<React.SetStateAction<SummaryResponse| null>>;
 }
 interface SummaryResponse {
   duration: string;
@@ -24,14 +32,20 @@ interface SummaryResponse {
   };
 }
 
-const Message: React.FC<MessageProps> = ({ role, content, theme, botIsTyping = false }) => {
+const Message: React.FC<MessageProps> = ({ role, content, theme, botIsTyping = false, isSummarized,setIsSummarized,isEnhanced,setIsEnhanced,selectedTabContext, setSelectedTabContext, summaryResponse, setSummaryResponse }) => {
   const [selectedTab, setSelectedTab] = React.useState(0);
   const [expanded, setExpanded] = React.useState(false);
   const [selectedButtons, setSelectedButtons] = useState<string[]>([]);
-  const [isSummarized, setIsSummarized] = useState(false);
-  const [isEnhanced, setIsEnhanced] = useState(false);
-  const [summaryResponse, setSummaryResponse] = useState<SummaryResponse | null>(null);
-  const [selectedTabContext, setSelectedTabContext] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const handleCopy = () => {
+      // Assuming `messageContent` contains the content of the message you want to copy
+      navigator.clipboard.writeText(content);
+  };
+  
+  const handleFeedback = (type: string) => {
+      setFeedback(type);
+  };
 
 
   const handleSummarize = async (context:any) => {
@@ -73,10 +87,10 @@ const Message: React.FC<MessageProps> = ({ role, content, theme, botIsTyping = f
         <div className='w-4/5 p-6 flex flex-col'>
         <div className="flex justify-between items-start">
         <div></div> {/* This empty div will push the icons to the right */}
-        <Stack direction="row" spacing={1} >
-        <CopyIcon className="h-4 w-4" />
-        <HandThumbUpIcon className="h-4 w4" />
-        <HandThumbDownIcon className="h-4 w-4" />
+        <Stack direction="row" spacing={1} style={{paddingBottom:'1em'}} >
+        <CopyIcon className="h-4 w-4 cursor-pointer" onClick={handleCopy}/>
+        <HandThumbUpIcon className="h-4 w4 cursor-pointer"  onClick={() => handleFeedback('up')} style={{ color: feedback === 'up' ? 'green' : 'inherit' }}/>
+        <HandThumbDownIcon className="h-4 w-4 cursor-pointer" onClick={() => handleFeedback('down')} style={{ color: feedback === 'down' ? 'red' : 'inherit' }}/>
       </Stack>
       </div>
         <Accordion expanded={expanded} onChange={handleAccordionToggle} >

@@ -1,9 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Message from './Message';
-import { TextField, IconButton, InputAdornment } from '@mui/material';
+import { TextField, IconButton, InputAdornment, Button } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { ChevronDownIcon, DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import LinearProgress from '@mui/material/LinearProgress';
+import axios from 'axios';
+import CircularProgress from '@mui/material/CircularProgress';
 
 interface ChatInterfaceProps {
     theme: string;
@@ -13,7 +20,16 @@ interface ChatInterfaceProps {
     setConversations: React.Dispatch<React.SetStateAction<Array<{ id: number, title: string, messages: Array<{ role: string, content: string }> }>>>;
 
 }
-
+interface SummaryResponse {
+    duration: string;
+    result: {
+        context: string;
+        book: string;
+        section_title: string;
+        hyperlink: string;
+        generated_resp: string;
+    };
+}
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversationId, setCurrentConversationId, conversations, setConversations }) => {
 
@@ -22,7 +38,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversatio
     const [botIsTyping, setBotIsTyping] = useState(false);
     const [selectedOption, setSelectedOption] = useState('CSSB Procedures for contact center');
     const [isFirstMessageSent, setIsFirstMessageSent] = useState(false);
-
+    const [openUploadDialog, setOpenUploadDialog] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isSummarized, setIsSummarized] = useState(false);
+    const [isEnhanced, setIsEnhanced] = useState(false);
+    const [summaryResponse, setSummaryResponse] = useState<SummaryResponse | null>(null);
+    const [selectedTabContext, setSelectedTabContext] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSelectChange = (event: React.ChangeEvent<{ value: unknown }>) => {
         setSelectedOption(event.target.value as string);
@@ -42,19 +65,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversatio
         // ... any other styles
     };
 
-    const fetchBotResponse = async (query: string) => {
+    const fetchBotResponse = async (endpoint: string, payload: any) => {
         try {
-            const response = await fetch('http://localhost:3001/chat', {
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    query: query,
-                    corpus_name: "YourCorpusName"  // Replace with actual corpus name if needed
-                })
+                body: JSON.stringify(payload)
             });
-    
+
             const data = await response.json();
             return data.response.result;
         } catch (error) {
@@ -62,13 +82,49 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversatio
             return [];
         }
     }
+    const handleFileUpload = async () => {
+        setIsLoading(true);
+        try {
+            // Assuming you're using axios for the API call
+            const response = await axios.post('YOUR_UPLOAD_ENDPOINT', selectedFile);
+            const requestId = response.data.requestId;
+    
+            // Polling logic
+            let uploadCompleted = false;
+            while (!uploadCompleted) {
+                const statusResponse = await axios.get('YOUR_STATUS_CHECK_ENDPOINT' + requestId);
+                if (statusResponse.data.status === 'completed') {
+                    uploadCompleted = true;
+                } else {
+                    // Wait for a few seconds before polling again
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                }
+            }
+        } catch (error) {
+            console.error("Error uploading file:", error);
+        } finally {
+            setIsLoading(false);
+            setOpenUploadDialog(false);
+        }
+    }
+    
+
     const handleSendMessage = async () => {
         setIsFirstMessageSent(true);
         setBotIsTyping(true);
         if (inputValue.trim()) {
             const newMessage = { role: 'user', content: inputValue.trim() };
             let currentId: number;
-    
+            let endpoint = isFirstMessageSent ? 'http://localhost:3001/generate' : 'http://localhost:3001/chat';
+            let payload = isFirstMessageSent
+                ? {
+                    prompt: inputValue.trim(),
+                    context: `${selectedTabContext}${summaryResponse ? summaryResponse.result.generated_resp : ""}${isEnhanced ? "Enhance content here" : ""}`
+                }
+                : {
+                    query: inputValue.trim(),
+                    corpus_name: "YourCorpusName"  // Replace with actual corpus name if needed
+                };
             if (currentConversationId === null) {
                 const newConversation = {
                     id: Date.now(),
@@ -86,13 +142,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversatio
                 );
                 currentId = currentConversationId;
             }
-    
+
             setInputValue('');
-    
-            const botResponses = await fetchBotResponse(inputValue.trim());
-    
+
+            const botResponses = await fetchBotResponse(endpoint, payload);
+
             setBotIsTyping(false);
-    
+            // Update the isFirstMessageSent state
+            if (!isFirstMessageSent) {
+                setIsFirstMessageSent(true);
+            }
             setConversations(prevConversations => {
                 const updatedConversations = prevConversations.map(conv =>
                     conv.id === currentId ? { ...conv, messages: [...conv.messages, { role: 'bot', content: botResponses }] } : conv
@@ -101,7 +160,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversatio
             });
         }
     }
-    
+    useEffect(() => {
+        setIsFirstMessageSent(false);
+    }, [currentConversationId]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -109,11 +170,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversatio
         const timer = setTimeout(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 100); // 100ms delay 
-    
+
         // Cleanup the timer when the effect runs again or the component unmounts
         return () => clearTimeout(timer);
     }, [currentMessages]);
-    
+
     return (
         <div className={`flex-1 p-4 ${theme === 'dark' ? 'bg-gradient-to-b from-black to-gray-700 text-white' : ''}`}>
 
@@ -137,14 +198,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversatio
                         <MenuItem value="CSSB Procedures for contact center">
                             <em>CSSB Procedures for contact center</em>
                         </MenuItem>
-
                     </Select>
                 </FormControl>
 
                 {/* Upload Icon */}
-                <button className="bg-gray-300 p-2 rounded-md hover:bg-gray-400" style={uploadIconStyles} >
+                <button className="bg-gray-300 p-2 rounded-md hover:bg-gray-400" style={uploadIconStyles} onClick={() => setOpenUploadDialog(true)}>
                     <DocumentPlusIcon className="h-6 w-6" />
                 </button>
+
             </div>
             {/* Chat Messages Section */}
             <div className="chat-messages mb-4 flex flex-col items-center overflow-y-hidden hide-sidebar" style={{ maxHeight: 'calc(100% - 80px)' }} > {/* Adjust the 80px based on the height of your chat input section */}
@@ -157,7 +218,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversatio
 
 
                     {currentMessages.map((message, index) => (
-                        <Message key={index} role={message.role} content={message.content} theme={theme} />
+                        <Message key={index} role={message.role} content={message.content} theme={theme} isSummarized={isSummarized} setIsSummarized={setIsSummarized} isEnhanced={isEnhanced} setIsEnhanced={setIsEnhanced} selectedTabContext={selectedTabContext} setSelectedTabContext={setSelectedTabContext} summaryResponse={summaryResponse} setSummaryResponse={setSummaryResponse} />
                     ))}
                     {botIsTyping && (
                         <Message
@@ -165,6 +226,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversatio
                             content=""
                             theme={theme}
                             botIsTyping={true}
+                            isSummarized={isSummarized} setIsSummarized={setIsSummarized} isEnhanced={isEnhanced} setIsEnhanced={setIsEnhanced} selectedTabContext={selectedTabContext} setSelectedTabContext={setSelectedTabContext} summaryResponse={summaryResponse} setSummaryResponse={setSummaryResponse}
                         />
                     )}
                     <div ref={messagesEndRef}></div> {/* This will be our marker to scroll to */}
@@ -206,6 +268,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversatio
                                 />
                             </div></div></div></form>
             </div>
+            <Dialog open={openUploadDialog} onClose={() => setOpenUploadDialog(false)}>
+                <DialogTitle>Upload File</DialogTitle>
+                <DialogContent>
+                    <label htmlFor="file" className="upload-label bg-gray-500">
+                        Choose a file
+                    </label>
+                    <input type="file" id="file" className="file-input  bg-gray-500" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+
+                    {uploadProgress > 0 && <LinearProgress variant="determinate" value={uploadProgress} />}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenUploadDialog(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleFileUpload} color="primary">
+                        Upload
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
         </div>
 
     );
