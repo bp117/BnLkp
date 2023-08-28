@@ -53,7 +53,7 @@ useEffect(() => {
     <div>
       <AppBar toggleTheme={toggleTheme} theme={theme} />
       <div className="relative flex h-screen">
-      {sidebarOpen && <Sidebar conversations={conversations} startNewConversation={startNewConversation} setCurrentConversationId={setCurrentConversationId} />}
+      {sidebarOpen && <Sidebar conversations={conversations} startNewConversation={startNewConversation} setCurrentConversationId={setCurrentConversationId} setConversations={setConversations}/>}
         <span className={sidebarOpen ? "data-state-open" : "data-state-closed"}>
           <a
             onClick={() => setSidebarOpen(!sidebarOpen)}
