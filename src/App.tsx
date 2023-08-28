@@ -6,7 +6,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { lightTheme, darkTheme } from './theme';
 
 function App() {
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState('dark');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<number | null>(null);
   const [conversations, setConversations] = useState<Array<{ id: number, title: string, messages: Array<{ role: string, content: string }> }>>([]);
