@@ -3,6 +3,7 @@ import React, {
 } from 'react';
 import {Button, Tabs, Tab, Card, CardHeader, CardContent, Link, Typography, Accordion, AccordionSummary, AccordionDetails, Stack, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { Book, Link as LinkIcon, ExpandMore } from '@mui/icons-material';
+import { ClipboardIcon as CopyIcon, HandThumbUpIcon, HandThumbDownIcon } from '@heroicons/react/24/outline'; // Importing heroicons
 
 type Role = 'user' | 'bot';
 
@@ -68,7 +69,16 @@ const Message: React.FC<MessageProps> = ({ role, content, theme, botIsTyping = f
       } `}>
       <img src={`${role}-icon.png`} alt={`${role} icon`} className="w-8 h-8 mr-2" />
       {role === 'bot' && !botIsTyping && content ? (
-        <div className='w-4/5'>
+        
+        <div className='w-4/5 p-6 flex flex-col'>
+        <div className="flex justify-between items-start">
+        <div></div> {/* This empty div will push the icons to the right */}
+        <Stack direction="row" spacing={1} >
+        <CopyIcon className="h-4 w-4" />
+        <HandThumbUpIcon className="h-4 w4" />
+        <HandThumbDownIcon className="h-4 w-4" />
+      </Stack>
+      </div>
         <Accordion expanded={expanded} onChange={handleAccordionToggle} >
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Typography>Bot Responses</Typography>

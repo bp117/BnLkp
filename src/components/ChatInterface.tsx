@@ -105,10 +105,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ theme, currentConversatio
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
-        // Scroll to the bottom whenever messages are updated
-        console.log("conv:", conversations)
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        // Scroll to the bottom after a slight delay to ensure the DOM has updated
+        const timer = setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100); // 100ms delay 
+    
+        // Cleanup the timer when the effect runs again or the component unmounts
+        return () => clearTimeout(timer);
     }, [currentMessages]);
+    
     return (
         <div className={`flex-1 p-4 ${theme === 'dark' ? 'bg-gradient-to-b from-black to-gray-700 text-white' : ''}`}>
 
